@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/education', [ProfileController::class, 'addEducation']);
     Route::post('/profile/work-experience', [ProfileController::class, 'addWorkExperience']);
     Route::post('/profile/skills', [ProfileController::class, 'addSkills']);
+    Route::delete('/profile/skills/{skillId}', [ProfileController::class, 'deleteSkill']);
 
     // Jobs
     Route::get('/jobs', [JobController::class, 'index']);

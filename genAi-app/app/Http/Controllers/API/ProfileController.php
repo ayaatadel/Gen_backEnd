@@ -186,4 +186,17 @@ class ProfileController extends Controller
             'skills' => $request->user()->skills,
         ]);
     }
+
+    public function deleteSkill(Request $request, $skillId)
+    {
+        $skill = $request->user()->skills()->find($skillId);
+
+        if (!$skill) {
+            return response()->json(['message' => 'Skill not found'], 404);
+        }
+
+        $skill->delete();
+
+        return response()->json(['message' => 'Skill deleted successfully']);
+    }
 }

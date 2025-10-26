@@ -10,33 +10,42 @@ use Illuminate\Support\Facades\Validator;
 
 class JobController extends Controller
 {
-    public function index(Request $request)
-    {
-        $jobs = Job::with('company')
-            ->when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%")
-                        ->orWhere('location', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->location, function ($query, $location) {
-                $query->where('location', 'like', "%{$location}%");
-            })
-            ->when($request->type, function ($query, $type) {
-                $query->where('type', $type);
-            })
-            ->when($request->salary_from, function ($query, $salaryFrom) {
-                $query->where('salary_from', '>=', $salaryFrom);
-            })
-            ->when($request->salary_to, function ($query, $salaryTo) {
-                $query->where('salary_to', '<=', $salaryTo);
-            })
-            ->where('is_active', true)
-            ->paginate(10);
+   public function index(Request $request)
+{
+    $jobs = Job::with('company')
+        ->when($request->search, function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%");
+            });
+        })
+        ->when($request->location, function ($query, $location) {
+            $query->where('location', 'like', "%{$location}%");
+        })
+        ->when($request->type, function ($query, $type) {
+            $query->where('type', $type);
+        })
+        ->when($request->salary_from, function ($query, $salaryFrom) {
+            $query->where('salary_from', '>=', $salaryFrom);
+        })
+        ->when($request->salary_to, function ($query, $salaryTo) {
+            $query->where('salary_to', '<=', $salaryTo);
+        })
+        ->where('is_active', true)
+        ->paginate(10);
 
-        return response()->json($jobs);
+    // ✅ لو مفيش وظائف
+    if ($jobs->isEmpty()) {
+        return response()->json([
+            'message' => 'No jobs yet',
+            'data' => [],
+        ], 200);
     }
+
+    return response()->json($jobs);
+}
+
 
     public function show(Job $job)
     {
