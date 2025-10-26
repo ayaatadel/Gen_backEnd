@@ -20,49 +20,100 @@ class ProfileController extends Controller
             'jobApplications',
         ]);
 
+        $userArray = $user->toArray();
+
+        // نحذف الـ profile الأصلية لأنها موجودة بالفعل داخل $userArray
+        unset($userArray['profile']);
+
         return response()->json([
-            'profile' => $user,
+            'profile' => [
+                ...$userArray,
+                "phone_number" => $user->profile->phone_number ?? null,
+                "location" => $user->profile->location ?? null,
+                "professional_bio" => $user->profile->professional_bio ?? null,
+                "years_of_experience" => $user->profile->years_of_experience ?? 0,
+                "profile_picture" => $user->profile->profile_picture ?? null,
+            ],
         ]);
     }
 
+    // public function update(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'phone_number' => 'nullable|string|max:20',
+    //         'location' => 'nullable|string|max:255',
+    //         'professional_bio' => 'nullable|string',
+    //         'years_of_experience' => 'nullable|integer|min:0',
+    //         'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors(), 422);
+    //     }
+
+    //     $profile = $request->user()->profile;
+
+    //     if ($request->hasFile('profile_picture')) {
+    //         // Delete old picture if exists
+    //         if ($profile->profile_picture) {
+    //             Storage::disk('public')->delete($profile->profile_picture);
+    //         }
+
+    //         $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+    //         $profile->profile_picture = $path;
+    //     }
+
+    //     $profile->update($request->only([
+    //         'phone_number',
+    //         'location',
+    //         'professional_bio',
+    //         'years_of_experience',
+    //     ]));
+
+    //     return response()->json([
+    //         'message' => 'Profile updated successfully',
+    //         'profile' => $profile,
+    //     ]);
+    // }
     public function update(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'phone_number' => 'nullable|string|max:20',
-            'location' => 'nullable|string|max:255',
-            'professional_bio' => 'nullable|string',
-            'years_of_experience' => 'nullable|integer|min:0',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'phone_number' => 'nullable|string|max:20',
+        'location' => 'nullable|string|max:255',
+        'professional_bio' => 'nullable|string',
+        'years_of_experience' => 'nullable|integer|min:0',
+        'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $profile = $request->user()->profile;
-
-        if ($request->hasFile('profile_picture')) {
-            // Delete old picture if exists
-            if ($profile->profile_picture) {
-                Storage::disk('public')->delete($profile->profile_picture);
-            }
-
-            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
-            $profile->profile_picture = $path;
-        }
-
-        $profile->update($request->only([
-            'phone_number',
-            'location',
-            'professional_bio',
-            'years_of_experience',
-        ]));
-
-        return response()->json([
-            'message' => 'Profile updated successfully',
-            'profile' => $profile,
-        ]);
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
     }
+
+    $profile = $request->user()->profile;
+
+    // ✅ تحديث الحقول النصية
+    $profile->phone_number = $request->input('phone_number', $profile->phone_number);
+    $profile->location = $request->input('location', $profile->location);
+    $profile->professional_bio = $request->input('professional_bio', $profile->professional_bio);
+    $profile->years_of_experience = $request->input('years_of_experience', $profile->years_of_experience);
+
+    // ✅ لو فيه صورة جديدة
+    if ($request->hasFile('profile_picture')) {
+        if ($profile->profile_picture) {
+            Storage::disk('public')->delete($profile->profile_picture);
+        }
+        $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+        $profile->profile_picture = $path;
+    }
+
+    $profile->save();
+
+    return response()->json([
+        'message' => 'Profile updated successfully',
+        'profile' => $profile,
+    ]);
+}
+
 
     public function addEducation(Request $request)
     {
@@ -117,7 +168,7 @@ class ProfileController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'skills' => 'required|array',
-            'skills.*.id' => 'required|exists:skills,id',
+            'skills.*.title' => 'required|string|max:255',
             'skills.*.years_of_experience' => 'required|integer|min:0',
             'skills.*.proficiency_level' => 'required|in:beginner,intermediate,expert',
         ]);
@@ -126,14 +177,9 @@ class ProfileController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $skillsData = collect($request->skills)->mapWithKeys(function ($skill) {
-            return [$skill['id'] => [
-                'years_of_experience' => $skill['years_of_experience'],
-                'proficiency_level' => $skill['proficiency_level'],
-            ]];
-        })->toArray();
-
-        $request->user()->skills()->sync($skillsData, false);
+        foreach ($request->skills as $skill) {
+            $request->user()->skills()->create($skill);
+        }
 
         return response()->json([
             'message' => 'Skills added successfully',

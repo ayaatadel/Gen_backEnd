@@ -43,12 +43,12 @@ class User extends Authenticatable
         return $this->hasMany(WorkExperience::class);
     }
 
+  
+
     public function skills()
-    {
-        return $this->belongsToMany(Skill::class, 'user_skills')
-            ->withPivot('years_of_experience', 'proficiency_level')
-            ->withTimestamps();
-    }
+{
+    return $this->hasMany(UserSkill::class);
+}
 
     public function jobApplications()
     {
