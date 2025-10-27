@@ -26,6 +26,12 @@ class AdminController extends Controller
         $jobs = Job::with(['company', 'applications'])->paginate(10);
         return response()->json($jobs);
     }
+    public function companies()
+    {
+        $companies = Company::paginate(10);
+        return response()->json($companies);
+    }
+
 
     public function createJob(Request $request)
     {
@@ -117,5 +123,39 @@ class AdminController extends Controller
             'message' => 'Application status updated successfully',
             'application' => $application->load(['user', 'job']),
         ]);
+    }
+
+   public function deleteJob($jobID)
+    {
+
+        try {
+            $job = Job::findOrFail($jobID);
+            $job->delete();
+            return response()->json([
+                'message' => 'Job deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete job',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+     public function deleteCompany($companyID)
+    {
+
+        try {
+            $company= Job::findOrFail($companyID);
+            $company->delete();
+            return response()->json([
+                'message' => 'company deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete Company',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
