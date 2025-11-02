@@ -40,9 +40,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin routes (use middleware class directly to avoid Kernel changes)
     Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->prefix('admin')->group(function () {
         Route::get('/users', [AdminController::class, 'users']);
+        Route::delete('/users/{userID}', [AdminController::class, 'deleteUser']);
+        Route::put('/users/{user}', [AdminController::class, 'updateUser']);
         Route::get('/companies', [AdminController::class, 'companies']);
         Route::get('/jobs', [AdminController::class, 'jobs']);
         Route::post('/jobs', [AdminController::class, 'createJob']);
+        Route::put('/jobs/{job}', [AdminController::class, 'updateJob']);
         Route::delete('/jobs/{jobID}', [AdminController::class, 'deleteJob']);
         Route::post('/companies', [AdminController::class, 'createCompany']);
         Route::delete('/companies/{companyID}', [AdminController::class, 'deleteCompany']);

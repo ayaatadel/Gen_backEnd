@@ -15,11 +15,125 @@ class AdminController extends Controller
     // Authorization for admin routes is handled via route middleware in `routes/api.php`.
     // Removed inline constructor middleware to avoid depending on controller base implementation.
 
+    // public function users()
+    // {
+    //     $users = User::with('profile')->where('role', '!=', 'admin')->paginate(10);
+    //     return response()->json($users);
+    // }
     public function users()
     {
-        $users = User::with('profile')->where('role', '!=', 'admin')->paginate(10);
+        $users = User::with('profile')->paginate(10);
         return response()->json($users);
     }
+
+    // public function updateUser(Request $request, User $user)
+
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'title' => 'sometimes|string|max:255',
+    //         'description' => 'sometimes|string',
+    //         'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+    //         'password' => 'sometimes|string|min:8|confirmed',
+    //         'role' => 'sometimes|in:user,admin',
+    //         'skills' => 'sometimes|array',
+    //         'skills.*.title' => 'required_with:skills|string|max:255',
+    //         'skills.*.years_of_experience' => 'required_with:skills|integer|min:0',
+    //         'skills.*.proficiency_level' => 'required_with:skills|in:beginner,intermediate,expert',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors(), 422);
+    //     }
+
+    //     try {
+    //         $user->update($request->all());
+    //         $user->save();
+    //         return response()->json([
+    //             'message' => 'user updated successfully',
+    //             'user' => $user,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Failed to update user',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+    public function updateUser(Request $request, User $user)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string|max:255||unique:users,name,',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'sometimes|string|min:8|confirmed',
+            'role' => 'sometimes|in:user,admin',
+            'skills' => 'sometimes|array',
+            'skills.*.title' => 'required_with:skills|string|max:255',
+            'skills.*.years_of_experience' => 'required_with:skills|integer|min:0',
+            'skills.*.proficiency_level' => 'required_with:skills|in:beginner,intermediate,expert',
+        ]);
+
+        if ($validator->fails()) {
+            // Special message for duplicated email
+            if (isset($validator->errors()->toArray()['email'])) {
+                return response()->json([
+                    'message' => 'This email is already exist.',
+                ], 422);
+            }
+
+            return response()->json($validator->errors(), 422);
+        }
+
+        try {
+            // Store old values before updating
+            $oldData = $user->only(['name', 'email', 'role']);
+
+            // Update user data
+            $user->update($request->only(['name', 'email', 'role']));
+
+            if ($request->filled('password')) {
+                $user->password = bcrypt($request->password);
+            }
+
+            $user->save();
+
+            // Compare old and new data to know what changed
+            $changes = [];
+            foreach ($oldData as $key => $oldValue) {
+                if ($user->$key !== $oldValue) {
+                    switch ($key) {
+                        case 'name':
+                            $changes[] = 'Name was updated successfully.';
+                            break;
+                        case 'email':
+                            $changes[] = 'Email was updated successfully.';
+                            break;
+                        case 'role':
+                            $changes[] = 'Role was updated successfully.';
+                            break;
+                    }
+                }
+            }
+
+            if ($request->filled('password')) {
+                $changes[] = 'Password was updated successfully.';
+            }
+
+            $message = !empty($changes)
+                ? implode(' ', $changes)
+                : 'No changes were made.';
+
+            return response()->json([
+                'message' => $message,
+                'user' => $user,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update user data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 
     public function jobs()
     {
@@ -99,6 +213,7 @@ class AdminController extends Controller
         }
 
         $job->update(['is_active' => $request->is_active]);
+        // $job->update($request->all());
 
         return response()->json([
             'message' => 'Job status updated successfully',
@@ -106,6 +221,70 @@ class AdminController extends Controller
         ]);
     }
 
+
+    public function updateJob(Request $request, Job $job)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'salary' => 'sometimes|numeric|min:0',
+            'is_active' => 'sometimes|boolean',
+            'deadline' => 'sometimes|date|after:today',
+            'requirements' => 'sometimes|string',
+            'location' => 'sometimes|string|max:255',
+            'type' => 'sometimes|in:full-time,part-time,contract',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        try {
+            $job->update($request->all());
+            $job->save();
+            return response()->json([
+                'message' => 'Job updated successfully',
+                'job' => $job,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update job',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updateCompany(Request $request, Company $company)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'salary' => 'sometimes|numeric|min:0',
+            'is_active' => 'sometimes|boolean',
+            'deadline' => 'sometimes|date|after:today',
+            'requirements' => 'sometimes|string',
+            'location' => 'sometimes|string|max:255',
+            'type' => 'sometimes|in:full-time,part-time,contract',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        try {
+            $company->update($request->all());
+            $company->save();
+            return response()->json([
+                'message' => '$company updated successfully',
+                '$company' => $company,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update coma$company',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function updateApplicationStatus(Request $request, $applicationId)
     {
         $validator = Validator::make($request->all(), [
@@ -125,7 +304,23 @@ class AdminController extends Controller
         ]);
     }
 
-   public function deleteJob($jobID)
+    public function deleteUser($userID)
+    {
+
+        try {
+            $user = user::findOrFail($userID);
+            $user->delete();
+            return response()->json([
+                'message' => 'user deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete user',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    public function deleteJob($jobID)
     {
 
         try {
@@ -142,11 +337,11 @@ class AdminController extends Controller
         }
     }
 
-     public function deleteCompany($companyID)
+    public function deleteCompany($companyID)
     {
 
         try {
-            $company= Job::findOrFail($companyID);
+            $company = Job::findOrFail($companyID);
             $company->delete();
             return response()->json([
                 'message' => 'company deleted successfully',
