@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-
+ Route::get('/jobs', [JobController::class, 'index']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
@@ -31,19 +31,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/profile/skills/{skillId}', [ProfileController::class, 'deleteSkill']);
 
     // Jobs
-    Route::get('/jobs', [JobController::class, 'index']);
+
     Route::get('/jobs/{job}', [JobController::class, 'show']);
-    Route::post('/jobs/{job}/apply', [JobController::class, 'apply']);
+    // Route::post('/jobs/{job}/apply', [JobController::class, 'apply']);
+     Route::post('/jobs/{job}/apply', [JobController::class, 'apply']);
+
     Route::get('/jobs/applications/my', [JobController::class, 'myApplications']);
     Route::get('/jobs/recommended', [JobController::class, 'recommendedJobs']);
 
     // Admin routes (use middleware class directly to avoid Kernel changes)
     Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->prefix('admin')->group(function () {
         Route::get('/users', [AdminController::class, 'users']);
+        Route::post('/users', [AdminController::class, 'addUser']);
         Route::delete('/users/{userID}', [AdminController::class, 'deleteUser']);
         Route::put('/users/{user}', [AdminController::class, 'updateUser']);
         Route::get('/companies', [AdminController::class, 'companies']);
-        Route::get('/jobs', [AdminController::class, 'jobs']);
+        // Route::get('/jobs', [AdminController::class, 'jobs']);
         Route::post('/jobs', [AdminController::class, 'createJob']);
         Route::put('/jobs/{job}', [AdminController::class, 'updateJob']);
         Route::delete('/jobs/{jobID}', [AdminController::class, 'deleteJob']);

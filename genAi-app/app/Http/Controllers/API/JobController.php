@@ -54,35 +54,85 @@ class JobController extends Controller
         ]);
     }
 
+    // public function apply(Request $request, Job $job)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'cover_letter' => 'required|string',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors(), 422);
+    //     }
+
+    //     // Check if user already applied
+    //     if ($job->applications()->where('user_id', $request->user()->id)->exists()) {
+    //         return response()->json([
+    //             'message' => 'You have already applied for this job',
+    //         ], 422);
+    //     }
+
+    //     $application = JobApplication::create([
+    //         'user_id' => $request->user()->id,
+    //         'job_id' => $job->id,
+    //         'cover_letter' => $request->cover_letter,
+    //         'status' => 'pending',
+    //     ]);
+
+    //     return response()->json([
+    //         'message' => 'Application submitted successfully',
+    //         'application' => $application,
+    //     ], 201);
+    // }
+
     public function apply(Request $request, Job $job)
-    {
-        $validator = Validator::make($request->all(), [
-            'cover_letter' => 'required|string',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'cover_letter' => 'nullable|string',
+        'cv' => 'required|file|mimes:pdf,doc,docx|max:5120', // 5MB max
+    ], [
+        'cv.required' => 'CV file is required.',
+        'cv.mimes' => 'CV must be a PDF, DOC, or DOCX file.',
+        'cv.max' => 'CV file must not exceed 5MB.',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        // Check if user already applied
-        if ($job->applications()->where('user_id', $request->user()->id)->exists()) {
-            return response()->json([
-                'message' => 'You have already applied for this job',
-            ], 422);
-        }
-
-        $application = JobApplication::create([
-            'user_id' => $request->user()->id,
-            'job_id' => $job->id,
-            'cover_letter' => $request->cover_letter,
-            'status' => 'pending',
-        ]);
-
-        return response()->json([
-            'message' => 'Application submitted successfully',
-            'application' => $application,
-        ], 201);
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
     }
+
+    $user = $request->user();
+
+    // Check if the user already applied
+    if ($job->applications()->where('user_id', $user->id)->exists()) {
+        return response()->json([
+            'message' => 'You have already applied for this job.',
+        ], 422);
+    }
+
+    // ✅ Save CV file
+    if ($request->hasFile('cv')) {
+        $file = $request->file('cv');
+        $filename = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs('public/cvs', $filename); // stored in storage/app/public/cvs
+        $cvPath = str_replace('public/', 'storage/', $path); // for public access
+    } else {
+        $cvPath = null;
+    }
+
+    // ✅ Create job application
+    $application = JobApplication::create([
+        'user_id' => $user->id,
+        'job_id' => $job->id,
+        'cover_letter' => $request->cover_letter ?? '',
+        'cv_version' => $cvPath,
+        'status' => 'pending',
+    ]);
+
+    return response()->json([
+        'message' => 'Application submitted successfully.',
+        'application' => $application,
+    ], 201);
+}
+
 
     public function myApplications(Request $request)
     {
