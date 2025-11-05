@@ -4,6 +4,7 @@ use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\JobController;
 use App\Http\Controllers\API\ProfileController;
+use App\Http\Controllers\API\RagController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-
+Route::get('/rag/jobs', [RagController::class, 'getAllJobs']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
@@ -36,6 +37,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/jobs/{job}/apply', [JobController::class, 'apply']);
     Route::get('/jobs/applications/my', [JobController::class, 'myApplications']);
     Route::get('/jobs/recommended', [JobController::class, 'recommendedJobs']);
+
+    // RAG (Retrieval-Augmented Generation) routes
+    Route::get('/rag/jobs', [RagController::class, 'getAllJobs']);
+    Route::post('/rag/analyze-job', [RagController::class, 'analyzeJobDescription']);
+    Route::post('/rag/generate-description', [RagController::class, 'generateJobDescription']);
+    Route::post('/rag/match-profile', [RagController::class, 'matchProfileWithJob']);
+    Route::post('/rag/generate-cover-letter', [RagController::class, 'generateCoverLetter']);
 
     // Admin routes (use middleware class directly to avoid Kernel changes)
     Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->prefix('admin')->group(function () {
