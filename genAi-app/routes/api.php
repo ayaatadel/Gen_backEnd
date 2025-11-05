@@ -3,6 +3,8 @@
 use App\Http\Controllers\API\AdminController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\JobController;
+use App\Http\Controllers\API\RagController;
+
 use App\Http\Controllers\API\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,7 +17,8 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
- Route::get('/jobs', [JobController::class, 'index']);
+Route::get('/jobs', [JobController::class, 'index']);
+Route::get('/rag/jobs', [RagController::class, 'getJobs']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
@@ -34,7 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/jobs/{job}', [JobController::class, 'show']);
     // Route::post('/jobs/{job}/apply', [JobController::class, 'apply']);
-     Route::post('/jobs/{job}/apply', [JobController::class, 'apply']);
+    Route::post('/jobs/{job}/apply', [JobController::class, 'apply']);
 
     Route::get('/jobs/applications/my', [JobController::class, 'myApplications']);
     Route::get('/jobs/recommended', [JobController::class, 'recommendedJobs']);
