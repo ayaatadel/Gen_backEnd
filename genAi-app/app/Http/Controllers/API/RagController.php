@@ -11,7 +11,7 @@ class RagController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function getJobs()
+    public function getAllJobs()
     {
         $jobs = Job::all();
         return response()->json($jobs);
