@@ -4,6 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Job;
+use App\Models\Profile;
+use App\Models\UserSkill;
+use App\Models\WorkExperience;
+use App\Models\Company;
 use Illuminate\Http\Request;
 
 class RagController extends Controller
@@ -13,8 +17,62 @@ class RagController extends Controller
      */
     public function getAllJobs()
     {
-        $jobs = Job::all();
-        return response()->json($jobs);
+        $data = [];
+
+        // Add jobs data
+        $jobs = Job::select('title', 'description', 'requirements', 'type')->get();
+        foreach ($jobs as $job) {
+            $data[] = [
+                'title' => $job->title,
+                'description' => $job->description,
+                'requirements' => $job->requirements,
+                'type' => $job->type
+            ];
+        }
+
+        // Add profile data
+        $profile = auth()->user()->profile()->select('professional_bio', 'years_of_experience')->first();
+        if ($profile) {
+            $data[] = [
+                'professional_bio' => $profile->professional_bio,
+                'years_of_experience' => $profile->years_of_experience
+            ];
+        }
+
+        // Add user skills
+        $skills = [];
+        $userSkills = auth()->user()->skills()->select('title', 'years_of_experience', 'proficiency_level')->get();
+        foreach ($userSkills as $skill) {
+            $skills[] = [
+                'title' => $skill->title,
+                'years_of_experience' => $skill->years_of_experience,
+                'proficiency_level' => $skill->proficiency_level
+            ];
+        }
+        $data[] = ['skills' => $skills];
+
+        // Add work experience
+        $workExperiences = auth()->user()->workExperiences()->select('company_name', 'position', 'description', 'achievements')->get();
+        foreach ($workExperiences as $experience) {
+            $data[] = [
+                'company_name' => $experience->company_name,
+                'position' => $experience->position,
+                'description' => $experience->description,
+                'achievements' => $experience->achievements
+            ];
+        }
+
+        // Add company data
+        $company = auth()->user()->company()->select('description')->first();
+        if ($company) {
+            $data[] = [
+                'description' => $company->description
+            ];
+        }
+
+        return response()->json([
+            'data' => $data
+        ]);
 
     }
 
