@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Job;
+use Illuminate\Support\Facades\Hash;
 use App\Models\JobApplication;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -25,6 +26,82 @@ class AdminController extends Controller
         $users = User::with('profile')->paginate(10);
         return response()->json($users);
     }
+    // public function addUser(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'name' => 'required|string|max:255|unique:users',
+    //         'email' => 'required|string|email|max:255|unique:users',
+    //         'password' => 'required|string|min:8|confirmed',
+    //         'role' => 'required|in:user,admin',
+    //     ], [
+    //         'email.unique' => 'This email is already exist.',
+    //         'name.unique' => 'This name is already exist.',
+    //         'role.in' => 'Invalid role.',
+    //         'role.required' => 'Role is required.',
+    //         'email.required' => 'Email is required.',
+    //         'email.email' => 'Invalid email format.',
+    //         'email.max' => 'Email must be less than 255 characters.',
+    //         'password.required' => 'Password is required.',
+    //         'password.min' => 'Password must be at least 8 characters.',
+    //         'name.required' => 'Name is required.',
+    //         'name.max' => 'Name must be less than 255 characters.',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors(), 422);
+    //     }
+
+    //     $user = User::create([
+    //         'name' => $request->name,
+    //         'email' => $request->email,
+    //         'password' => Hash::make($request->password),
+    //         'role' => $request->role,
+    //     ]);
+
+    //     return response()->json([
+    //         'message' => 'User added successfully',
+    //         'user' => $user,
+    //     ], 201);
+    // }
+
+
+public function addUser(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255|unique:users',
+        'email' => 'required|string|email|max:255|unique:users',
+        'password' => 'required|string|min:8|confirmed',
+        'role' => 'required|in:user,admin',
+    ], [
+        'email.unique' => 'This email is already exist.',
+        'name.unique' => 'This name is already exist.',
+        'role.in' => 'Invalid role.',
+        'role.required' => 'Role is required.',
+        'email.required' => 'Email is required.',
+        'email.email' => 'Invalid email format.',
+        'email.max' => 'Email must be less than 255 characters.',
+        'password.required' => 'Password is required.',
+        'password.min' => 'Password must be at least 8 characters.',
+        'name.required' => 'Name is required.',
+        'name.max' => 'Name must be less than 255 characters.',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => $request->role,
+    ]);
+
+    return response()->json([
+        'message' => 'User added successfully',
+        'user' => $user,
+    ], 201);
+}
 
     // public function updateUser(Request $request, User $user)
 
