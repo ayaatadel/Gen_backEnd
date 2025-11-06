@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             SkillSeeder::class,
             CompanySeeder::class,
+            JobSeeder::class,
         ]);
     }
 }
