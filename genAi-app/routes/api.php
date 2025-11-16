@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/jobs', [JobController::class, 'index']);
-Route::get('/rag/jobs', [RagController::class, 'getAllJobs']);
+Route::get('/rag/jobs/{profileId?}', [RagController::class, 'getAllJobs']);
+Route::get('/rag/alljobs', [RagController::class, 'getJobs']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth

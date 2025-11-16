@@ -46,9 +46,14 @@ class User extends Authenticatable
   
 
     public function skills()
-{
-    return $this->hasMany(UserSkill::class);
-}
+    {
+        return $this->hasMany(UserSkill::class);
+    }
+
+    public function company()
+    {
+        return $this->hasOne(Company::class);
+    }
 
     public function jobApplications()
     {
