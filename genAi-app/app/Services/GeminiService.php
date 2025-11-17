@@ -63,7 +63,70 @@ class GeminiService
         try {
             $result = $this->callBridge($cvText);
 
-            // Normalize the response
+            // Check document type
+            $documentType = $result['documentType'] ?? 'UNKNOWN';
+            
+            // If not a CV, return error response with low scores
+            if ($documentType !== 'CV') {
+                $docTypeDisplay = [
+                    'CERTIFICATE' => 'certificate of completion/training',
+                    'COVER_LETTER' => 'cover letter',
+                    'OTHER' => 'non-CV document',
+                    'UNKNOWN' => 'unrecognized document'
+                ][$documentType] ?? 'non-CV document';
+                
+                return [
+                    'extractedInfo' => [
+                        'name' => null,
+                        'email' => null,
+                        'phone' => null,
+                        'skills' => [],
+                        'experience' => [],
+                        'education' => [],
+                        'companies' => [],
+                        'jobTitles' => [],
+                    ],
+                    'analysis' => [
+                        'strengths' => [],
+                        'weaknesses' => $result['weaknesses'] ?? [
+                            "Document identified as: {$docTypeDisplay}",
+                            'Not a valid CV/resume format',
+                            'Missing essential CV sections'
+                        ],
+                        'atsScore' => 0,
+                        'overallScore' => 0,
+                        'suggestions' => $result['improvements'] ?? [
+                            "This is a {$docTypeDisplay}, not a CV/resume",
+                            'Please upload your full CV/resume for analysis',
+                        ],
+                    ],
+                    'summary' => "This document appears to be a {$docTypeDisplay} rather than a CV/resume. Please upload your complete CV for proper analysis.",
+                    'jobMatches' => [],
+                    'sections' => [
+                        'contact' => ['emails' => [], 'phones' => [], 'links' => []],
+                        'summary' => '',
+                        'skills' => ['technical' => [], 'soft' => [], 'tools' => []],
+                        'experience' => [],
+                        'education' => [],
+                        'projects' => [],
+                        'certifications' => [],
+                        'languages' => [],
+                    ],
+                    'ats' => [
+                        'score' => 0,
+                        'reasons' => [
+                            "Document type: {$docTypeDisplay}",
+                            'Not a CV/resume format',
+                            'ATS systems require proper CV structure',
+                        ],
+                        'keywordMatches' => ['skillsFound' => [], 'count' => 0],
+                    ],
+                    'documentType' => $documentType,
+                    'isValidCV' => false,
+                ];
+            }
+
+            // Normalize the response for valid CVs
             $normalized = [
                 'extractedInfo' => [
                     'name' => $result['name'] ?? null,
@@ -77,13 +140,15 @@ class GeminiService
                 ],
                 'analysis' => [
                     'strengths' => $result['strengths'] ?? [],
-                    'weaknesses' => $result['weaknesses'] ?? [],
+                    'weaknesses' => $result['weaknesses'] ?? $result['improvements'] ?? [],
                     'atsScore' => $result['atsScore'] ?? 50,
                     'overallScore' => $result['overallScore'] ?? 50,
                     'suggestions' => $result['suggestions'] ?? [],
                 ],
                 'summary' => $result['summary'] ?? 'CV analyzed successfully.',
                 'jobMatches' => $result['jobMatches'] ?? [],
+                'documentType' => 'CV',
+                'isValidCV' => true,
             ];
 
             // Enrich with structured sections parsed from raw text
@@ -153,6 +218,8 @@ class GeminiService
             'jobMatches' => [],
             'sections' => $sections,
             'ats' => $ats,
+            'documentType' => 'UNKNOWN',
+            'isValidCV' => false,
         ];
     }
 
@@ -177,8 +244,8 @@ class GeminiService
                 'soft' => [],
                 'tools' => [],
             ],
-            'experience' => [], // each: [company, title, startDate, endDate, bullets[]]
-            'education' => [], // each: [institution, degree, startDate, endDate, details]
+            'experience' => [],
+            'education' => [],
             'projects' => [],
             'certifications' => [],
             'languages' => [],
@@ -237,7 +304,6 @@ class GeminiService
             $skillsText = strtolower(implode(' ', $buffers['skills']));
             $tokens = preg_split('/[,•\-\n;]+\s*/', $skillsText);
             $tokens = array_values(array_unique(array_filter(array_map('trim', $tokens))));
-            // naive categorization
             $techKeywords = ['python','java','javascript','typescript','c#','c++','react','node','sql','mysql','postgres','aws','gcp','azure','docker','kubernetes','linux','git'];
             $toolKeywords = ['excel','tableau','power bi','figma','jira','notion','photoshop'];
             foreach ($tokens as $t) {
@@ -251,7 +317,6 @@ class GeminiService
             foreach ($blocks as $block) {
                 $b = trim($block);
                 if ($b === '') continue;
-                // Extract title/company and dates heuristically
                 preg_match('/(\b[A-Z][A-Za-z&\-. ]{2,}\b)/', $b, $companyMatch);
                 preg_match('/(\b[A-Za-z][A-Za-z&\-. ]{2,}\b)/', $b, $titleMatch);
                 preg_match('/(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{4})\s*(?:–|-|to)+\s*(Present|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{4})/i', $b, $dateMatch);
@@ -307,22 +372,18 @@ class GeminiService
         $length = strlen($cvText);
         if ($length > 400 && $length < 20000) { $score += 10; } else { $reasons[] = 'CV length is unusual for ATS'; }
 
-        // Contact info
         $hasEmail = preg_match('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', $cvText);
         $hasPhone = preg_match('/(\+?\d[\d\s().-]{7,}\d)/', $cvText);
         if ($hasEmail) { $score += 10; } else { $reasons[] = 'Missing professional email'; }
         if ($hasPhone) { $score += 10; } else { $reasons[] = 'Missing phone number'; }
 
-        // Headings (robust): honor parsed sections and detect spaced-letter variants
         $sections = $normalized['sections'] ?? [];
         $hasSection = function(string $key) use ($sections): bool {
             if (!isset($sections[$key])) return false;
-            // section can be string or array; treat non-empty as present
             if (is_array($sections[$key])) return count(array_filter($sections[$key])) > 0;
             return trim((string)$sections[$key]) !== '';
         };
 
-        // helper to detect spaced headings like E D U C A T I O N
         $hasHeading = function(string $text, string $word, array $variants = []): bool {
             $patterns = [];
             $variants = array_merge([$word], $variants);
@@ -355,25 +416,20 @@ class GeminiService
         }
         $score += $headingsScore;
 
-        // Bullet points / achievements
         $bulletCount = preg_match_all('/[\x{2022}\-\*]\s+/u', $cvText);
         if ($bulletCount >= 5) { $score += 10; } else { $reasons[] = 'Add more bullet-pointed achievements'; }
 
-        // Dates present
         $hasDates = preg_match('/(\b\d{4}\b)/', $cvText);
         if ($hasDates) { $score += 10; } else { $reasons[] = 'Include dates for roles and education'; }
 
-        // Skills density
         $skills = $normalized['extractedInfo']['skills'] ?? [];
         $skillsCount = is_array($skills) ? count($skills) : 0;
         if ($skillsCount >= 8) { $score += 10; } else { $reasons[] = 'List more relevant skills and tools'; }
 
-        // Formatting signals
         $hasAllCapsName = preg_match('/^[A-Z\s]{6,}$/m', $cvText);
         if ($hasAllCapsName) { $score += 2; }
 
-        // Cap score to 100 and min 0
-        $score = max(0, min(100, $score + 28)); // base weight to land around 60-85
+        $score = max(0, min(100, $score + 28));
 
         return [
             'score' => $score,
