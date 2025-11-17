@@ -65,43 +65,43 @@ class AdminController extends Controller
     // }
 
 
-public function addUser(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'name' => 'required|string|max:255|unique:users',
-        'email' => 'required|string|email|max:255|unique:users',
-        'password' => 'required|string|min:8|confirmed',
-        'role' => 'required|in:user,admin',
-    ], [
-        'email.unique' => 'This email is already exist.',
-        'name.unique' => 'This name is already exist.',
-        'role.in' => 'Invalid role.',
-        'role.required' => 'Role is required.',
-        'email.required' => 'Email is required.',
-        'email.email' => 'Invalid email format.',
-        'email.max' => 'Email must be less than 255 characters.',
-        'password.required' => 'Password is required.',
-        'password.min' => 'Password must be at least 8 characters.',
-        'name.required' => 'Name is required.',
-        'name.max' => 'Name must be less than 255 characters.',
-    ]);
+    public function addUser(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|in:user,admin',
+        ], [
+            'email.unique' => 'This email is already exist.',
+            'name.unique' => 'This name is already exist.',
+            'role.in' => 'Invalid role.',
+            'role.required' => 'Role is required.',
+            'email.required' => 'Email is required.',
+            'email.email' => 'Invalid email format.',
+            'email.max' => 'Email must be less than 255 characters.',
+            'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'name.required' => 'Name is required.',
+            'name.max' => 'Name must be less than 255 characters.',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+        ]);
+
+        return response()->json([
+            'message' => 'User added successfully',
+            'user' => $user,
+        ], 201);
     }
-
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-        'role' => $request->role,
-    ]);
-
-    return response()->json([
-        'message' => 'User added successfully',
-        'user' => $user,
-    ], 201);
-}
 
     // public function updateUser(Request $request, User $user)
 
@@ -331,37 +331,133 @@ public function addUser(Request $request)
         }
     }
 
-    public function updateCompany(Request $request, Company $company)
-    {
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'salary' => 'sometimes|numeric|min:0',
-            'is_active' => 'sometimes|boolean',
-            'deadline' => 'sometimes|date|after:today',
-            'requirements' => 'sometimes|string',
-            'location' => 'sometimes|string|max:255',
-            'type' => 'sometimes|in:full-time,part-time,contract',
+    // public function updateCompany(Request $request, Company $company)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'title' => 'sometimes|string|max:255',
+    //         'description' => 'sometimes|string',
+    //         'salary' => 'sometimes|numeric|min:0',
+    //         'is_active' => 'sometimes|boolean',
+    //         'deadline' => 'sometimes|date|after:today',
+    //         'requirements' => 'sometimes|string',
+    //         'location' => 'sometimes|string|max:255',
+    //         'type' => 'sometimes|in:full-time,part-time,contract',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors(), 422);
+    //     }
+
+    //     try {
+    //         $company->update($request->all());
+    //         $company->save();
+    //         return response()->json([
+    //             'message' => '$company updated successfully',
+    //             '$company' => $company,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Failed to update coma$company',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+    // public function updateCompany(Request $request, Company $company)
+    // {
+    //     // Validation: allow logo to be a string (URL) or a file upload
+    //     $validator = Validator::make($request->all(), [
+    //         'name' => 'sometimes|string|max:255',
+    //         'location' => 'sometimes|string|max:255',
+    //         'description' => 'sometimes|string',
+    //         'website' => 'sometimes|url',
+    //         'logo' => 'sometimes|nullable|string|file|mimes:jpg,jpeg,png,svg|max:2048',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json($validator->errors(), 422);
+    //     }
+
+    //     try {
+    //         // Handle file upload if a file is provided
+    //         if ($request->hasFile('logo')) {
+    //             $file = $request->file('logo');
+    //             $filename = time() . '_' . $file->getClientOriginalName();
+    //             $file->move(public_path('uploads/logos'), $filename);
+
+    //             // Replace the 'logo' input with the uploaded filename
+    //             $request->merge(['logo' => $filename]);
+    //         }
+
+    //         // Update company with validated fields
+    //         $company->update($request->only([
+    //             'name',
+    //             'location',
+    //             'description',
+    //             'website',
+    //             'logo',
+    //         ]));
+
+    //         return response()->json([
+    //             'message' => 'Company updated successfully',
+    //             'company' => $company,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Failed to update company',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+public function updateCompany(Request $request, Company $company)
+{
+    // Validate everything except logo
+    $validator = Validator::make($request->all(), [
+        'name' => 'sometimes|string|max:255',
+        'location' => 'sometimes|string|max:255',
+        'description' => 'sometimes|string',
+        'website' => 'sometimes|url',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    try {
+        // Handle 'logo' separately
+        if ($request->hasFile('logo')) {
+            $file = $request->file('logo');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/logos'), $filename);
+            $logo = $filename;
+        } elseif ($request->has('logo')) {
+            // If logo is sent as string
+            $logo = $request->input('logo');
+        } else {
+            $logo = $company->logo; // keep existing logo if nothing is sent
+        }
+
+        // Update company with all fields
+        $company->update([
+            'name' => $request->input('name', $company->name),
+            'location' => $request->input('location', $company->location),
+            'description' => $request->input('description', $company->description),
+            'website' => $request->input('website', $company->website),
+            'logo' => $logo,
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        try {
-            $company->update($request->all());
-            $company->save();
-            return response()->json([
-                'message' => '$company updated successfully',
-                '$company' => $company,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to update coma$company',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Company updated successfully',
+            'company' => $company,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to update company',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
+
     public function updateApplicationStatus(Request $request, $applicationId)
     {
         $validator = Validator::make($request->all(), [
