@@ -7,13 +7,14 @@ use App\Http\Controllers\API\RagController;
 
 use App\Http\Controllers\API\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\CVAnalysisController;
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 */
-
+Route::post('/cv/analyze', [CVAnalysisController::class, 'analyze']);
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -32,7 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/education', [ProfileController::class, 'addEducation']);
     Route::post('/profile/work-experience', [ProfileController::class, 'addWorkExperience']);
     Route::post('/profile/skills', [ProfileController::class, 'addSkills']);
-    Route::delete('/profile/skills/{skillId}', [ProfileController::class, 'deleteSkill']);
+    // Route::delete('/profile/skills/{skillId}', [ProfileController::class, 'deleteSkill']);
+     Route::delete('/profile/skills/{skillId}', [ProfileController::class, 'deleteSkill']);
 
     // Jobs
 
