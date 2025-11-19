@@ -309,7 +309,7 @@ class AdminController extends Controller
             'deadline' => 'sometimes|date|after:today',
             'requirements' => 'sometimes|string',
             'location' => 'sometimes|string|max:255',
-            'type' => 'sometimes|in:full-time,part-time,contract',
+            'type' => 'sometimes|in:full-time,part-time,Full-Time,Part-Time,contract',
         ]);
 
         if ($validator->fails()) {

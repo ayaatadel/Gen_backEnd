@@ -11,6 +11,8 @@ use App\Http\Controllers\API\CVAnalysisController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\RealtimeInterviewController;
 use App\Http\Controllers\UserSkillController;
+use App\Http\Controllers\CvController;
+use App\Http\Controllers\UserCvController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +49,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/jobs/applications/my', [JobController::class, 'myApplications']);
     Route::get('/jobs/recommended', [JobController::class, 'recommendedJobs']);
+ // ✅ CV Routes (PROTECTED)
+    Route::post('/user-cvs',                [UserCvController::class, 'store']);
+    Route::post('/profile/cv',              [ProfileController::class, 'saveCv']);
 
     // Admin routes (use middleware class directly to avoid Kernel changes)
     Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->prefix('admin')->group(function () {
@@ -71,19 +76,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // User Skills
 Route::get('/users/{userId}/skills', [UserSkillController::class, 'index']);
-Route::post('/profile/skills', [UserSkillController::class, 'store']);
+// Route::post('/profile/skills', [UserSkillController::class, 'store']);
 Route::put('/profile/skills/{id}', [UserSkillController::class, 'update']);
 Route::delete('/profile/skills/{id}', [UserSkillController::class, 'destroy']);
 
-// Main Interview Endpoints
+
+
 Route::post('/interviews/start', [InterviewController::class, 'start']);
-Route::get('/interviews/{id}', [InterviewController::class, 'show']);
+
 Route::get('/interviews/{id}/next-question', [InterviewController::class, 'nextQuestion']);
 Route::post('/interviews/{id}/finalize', [InterviewController::class, 'finalize']);
-
-// NEW: Report endpoint (same as show, but explicit)
 Route::get('/interviews/{id}/report', [InterviewController::class, 'show']);
 
-// Real-time Interview Endpoints
+// Real-time Interview
 Route::post('/interviews/{id}/rt/start', [RealtimeInterviewController::class, 'start']);
 Route::post('/interviews/{id}/rt/submit-answer', [RealtimeInterviewController::class, 'submitAnswer']);
+
+// MUST BE LAST — avoid swallowing other routes
+Route::get('/interviews/{id}', [InterviewController::class, 'show']);
+
+
+// CV generation (AI-powered)
+Route::post('/cv/generate', [CVController::class, 'generate']);
+
+
