@@ -8,6 +8,9 @@ use App\Http\Controllers\API\RagController;
 use App\Http\Controllers\API\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\CVAnalysisController;
+use App\Http\Controllers\InterviewController;
+use App\Http\Controllers\RealtimeInterviewController;
+use App\Http\Controllers\UserSkillController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,7 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/users/{userID}', [AdminController::class, 'deleteUser']);
         Route::put('/users/{user}', [AdminController::class, 'updateUser']);
         Route::get('/companies', [AdminController::class, 'companies']);
-        // Route::get('/jobs', [AdminController::class, 'jobs']);
+        Route::get('/jobs', [AdminController::class, 'jobs']);
         Route::post('/jobs', [AdminController::class, 'createJob']);
         Route::put('/jobs/{job}', [AdminController::class, 'updateJob']);
         Route::delete('/jobs/{jobID}', [AdminController::class, 'deleteJob']);
@@ -63,3 +66,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/applications/{application}/status', [AdminController::class, 'updateApplicationStatus']);
     });
 });
+
+
+
+// User Skills
+Route::get('/users/{userId}/skills', [UserSkillController::class, 'index']);
+Route::post('/profile/skills', [UserSkillController::class, 'store']);
+Route::put('/profile/skills/{id}', [UserSkillController::class, 'update']);
+Route::delete('/profile/skills/{id}', [UserSkillController::class, 'destroy']);
+
+// Main Interview Endpoints
+Route::post('/interviews/start', [InterviewController::class, 'start']);
+Route::get('/interviews/{id}', [InterviewController::class, 'show']);
+Route::get('/interviews/{id}/next-question', [InterviewController::class, 'nextQuestion']);
+Route::post('/interviews/{id}/finalize', [InterviewController::class, 'finalize']);
+
+// NEW: Report endpoint (same as show, but explicit)
+Route::get('/interviews/{id}/report', [InterviewController::class, 'show']);
+
+// Real-time Interview Endpoints
+Route::post('/interviews/{id}/rt/start', [RealtimeInterviewController::class, 'start']);
+Route::post('/interviews/{id}/rt/submit-answer', [RealtimeInterviewController::class, 'submitAnswer']);
