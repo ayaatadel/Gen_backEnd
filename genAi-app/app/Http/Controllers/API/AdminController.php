@@ -232,7 +232,7 @@ class AdminController extends Controller
             'description' => 'required|string',
             'requirements' => 'required|string',
             'location' => 'required|string|max:255',
-            'type' => 'required|in:full-time,part-time,contract',
+            'type' => 'required|in:full-time,part-time,Full-Time,Part-Time,contract',
             'salary_from' => 'nullable|numeric|min:0',
             'salary_to' => 'nullable|numeric|gt:salary_from',
             'deadline' => 'nullable|date|after:today',
@@ -510,20 +510,34 @@ public function updateCompany(Request $request, Company $company)
         }
     }
 
-    public function deleteCompany($companyID)
-    {
+    // public function deleteCompany($companyID)
+    // {
 
-        try {
-            $company = Job::findOrFail($companyID);
-            $company->delete();
-            return response()->json([
-                'message' => 'company deleted successfully',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to delete Company',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
+    //     try {
+    //         $company = Job::findOrFail($companyID);
+    //         $company->delete();
+    //         return response()->json([
+    //             'message' => 'company deleted successfully',
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Failed to delete Company',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
+    public function deleteCompany(Company $company)
+{
+    // Delete jobs linked to company
+    Job::where('company_id', $company->id)->delete();
+
+    // Delete company
+    $company->delete();
+
+    return response()->json([
+        'message' => 'Company deleted successfully'
+    ]);
+}
+
 }
